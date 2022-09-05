@@ -1,0 +1,2 @@
+National Parks NPS API Key 2JOTJFJPkRmsZNcchvTe5h9U933hnE5mFAsGS8cm
+https://developer.nps.gov/api/v1/parks?parkCode=acad&api_key=2JOTJFJPkRmsZNcchvTe5h9U933hnE5mFAsGS8cm
