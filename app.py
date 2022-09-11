@@ -1,7 +1,7 @@
 import os
 import pathlib
 import re
-
+import plotly.graph_objects as go
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -41,6 +41,15 @@ activityList = [item for sublist in activitiesList for item in sublist]
 occurrence = {item: activityList.count(item) for item in activityList}
 wordCloudList = list([key,val] for key,val in occurrence.items())
 del activitiesList,activityList,occurrence,parksDict
+
+def normalise(lst, vmax=50, vmin=16):
+    lmax = max(lst, key=lambda x: x[1])[1]
+    lmin = min(lst, key=lambda x: x[1])[1]
+    vrange = vmax-vmin
+    lrange = lmax-lmin or 1
+    for entry in lst:
+        entry[1] = int(((entry[1] - lmin) / lrange) * vrange + vmin)
+    return lst
 
 app.layout = html.Div(
     id="root",
@@ -91,9 +100,13 @@ app.layout = html.Div(
                                             dict(
                                                 lat = parksDf['Latitude'],
                                                 lon = parksDf['Longitude'],
-                                                text = parksDf.Description.str.wrap(30).apply(lambda x: x.replace('\n','<br>')),
+                                                #text = parksDf.Description.str.wrap(30).apply(lambda x: x.replace('\n','<br>')),
+                                                text = parksDf["Park Name"],
                                                 type="scattermapbox",
-                                                hoverinfo="text",
+                                                mode='markers+text',
+                                                textposition="top center",
+                                                textfont_color='orange'
+                                                #hoverinfo="text",
 
                                             )
                                     ],
@@ -121,8 +134,8 @@ app.layout = html.Div(
                 html.Div(
                     DashWordcloud(
                             id="wordcloud-graph",
-                            list=wordCloudList,
-                            width=500,height=1000,
+                            list=normalise(wordCloudList),
+                            width=500,height=800,
                             gridSize=16,
                             color='#7fafdf',
                             backgroundColor='#1f2630',
@@ -134,13 +147,22 @@ app.layout = html.Div(
                         ),
                     
                 ),
+                html.H4("", id="report"),
             ],
         ),
     ],
 )
 
-
-
+@app.callback(
+    Output(component_id="map-graph",component_property="figure")
+    ,[Input(component_id="wordcloud-graph",component_property="click"),Input(component_id="map-graph",component_property="figure")]
+    )
+def updateMap(item,figure):
+    if item is not None:
+        app.logger.info(item[0])
+    else:
+        app.logger.info('Empty selection!')
+    return figure
 
 if __name__ == "__main__":
-    app.run_server(debug=False,host='0.0.0.0',port='9950')
+    app.run_server(debug=True,host='0.0.0.0',port='9950')
